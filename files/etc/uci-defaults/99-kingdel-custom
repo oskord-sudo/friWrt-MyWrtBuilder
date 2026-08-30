@@ -1,0 +1,123 @@
+#!/bin/sh
+
+cat > /etc/init.d/cpusettings << 'EOF'
+#!/bin/sh /etc/rc.common
+START=100
+STOP=01
+start() {
+    echo 1 > /sys/devices/system/cpu/intel_pstate/hwp_dynamic_boost 2>/dev/null
+    for cpu in 0 1 2 3 4 5 6 7 8 9 10 11; do
+        if [ -d /sys/devices/system/cpu/cpu${cpu}/cpufreq ]; then
+            echo 400000 > /sys/devices/system/cpu/cpu${cpu}/cpufreq/scaling_min_freq
+            echo 3200000 > /sys/devices/system/cpu/cpu${cpu}/cpufreq/scaling_max_freq
+            echo performance > /sys/devices/system/cpu/cpu${cpu}/cpufreq/scaling_governor
+        fi
+    done
+    for cpu in 12 13 14 15 16 17 18 19; do
+        if [ -d /sys/devices/system/cpu/cpu${cpu}/cpufreq ]; then
+            echo 400000 > /sys/devices/system/cpu/cpu${cpu}/cpufreq/scaling_min_freq
+            echo 2800000 > /sys/devices/system/cpu/cpu${cpu}/cpufreq/scaling_max_freq
+            echo performance > /sys/devices/system/cpu/cpu${cpu}/cpufreq/scaling_governor
+        fi
+    done
+}
+EOF
+chmod +x /etc/init.d/cpusettings
+/etc/init.d/cpusettings enable
+
+cat > /etc/init.d/irq-affinity << 'EOF'
+#!/bin/sh /etc/rc.common
+START=21
+start() {
+    for i in 150 151 152 153 154; do
+        echo 10-11 > /proc/irq/$i/smp_affinity_list 2>/dev/null
+    done
+    for i in 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179; do
+        echo 12-19 > /proc/irq/$i/smp_affinity_list 2>/dev/null
+    done
+}
+EOF
+chmod +x /etc/init.d/irq-affinity
+/etc/init.d/irq-affinity enable
+
+cat > /etc/config/sqm << 'EOF'
+config queue 'eth1'
+	option enabled '1'
+	option interface 'eth0'
+	option download '540000'
+	option upload '540000'
+	option qdisc 'cake'
+	option script 'layer_cake.qos'
+	option linklayer 'ethernet'
+	option use_mq '0'
+	option overhead '0'
+	option advanced '1'
+	option qdisc_opts 'nat ack-filter diffserv3 rtt 50ms'
+	option debug_logging '0'
+	option verbosity '5'
+EOF
+
+cat > /etc/config/network << 'EOF'
+config interface 'loopback'
+	option device 'lo'
+	option proto 'static'
+	list ipaddr '127.0.0.1/8'
+
+config globals 'globals'
+	option ula_prefix 'fdba:1ef6:ec3d::/48'
+	option packet_steering '2'
+
+config device
+	option name 'br-lan'
+	option type 'bridge'
+	list ports 'eth1'
+	list ports 'eth2'
+	list ports 'eth3'
+	list ports 'eth4'
+	list ports 'eth5'
+	option ipv6 '0'
+
+config interface 'lan'
+	option device 'br-lan'
+	option proto 'static'
+	list ipaddr '192.168.1.1/24'
+	option multipath 'off'
+	option delegate '0'
+
+config interface 'wan'
+	option device 'eth0'
+	option proto 'dhcp'
+	option multipath 'off'
+	option hostname '*'
+	option delegate '0'
+
+config device
+	option name 'eth0'
+	option macaddr '94:83:C4:A9:ED:17'
+	option ipv6 '0'
+EOF
+
+cat > /etc/crontabs/root << 'EOF'
+@reboot /etc/init.d/cpusettings start >/dev/null 2>&1
+EOF
+/etc/init.d/cron restart
+
+cat > /etc/init.d/set-custom-model << 'EOF'
+#!/bin/sh /etc/rc.common
+START=95
+USE_PROCD=1
+start_service() {
+    echo "Kingdel NUC K3-2" > /tmp/sysinfo/model
+    uci set system.@system[0].hostname='Kingdel'
+    uci set system.@system[0].model='Kingdel NUC K3-2'
+    uci commit system
+}
+boot() {
+    start_service
+}
+EOF
+chmod +x /etc/init.d/set-custom-model
+/etc/init.d/set-custom-model enable
+/etc/init.d/set-custom-model start
+
+exit 0
