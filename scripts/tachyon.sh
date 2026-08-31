@@ -17,3 +17,4 @@ echo "$LATEST_JSON" | jq -r '.assets[] | select(.name | endswith(".apk")) | .bro
 done
 
 echo "Tachyon packages downloaded"
+ls -lh packages/*tachyon* 2>/dev/null || true
