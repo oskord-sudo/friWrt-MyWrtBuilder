@@ -1,5 +1,18 @@
 #!/bin/sh
 
+# Язык LuCI — русский
+uci set luci.main.lang='ru'
+uci commit luci
+
+# Часовой пояс — Москва
+uci set system.@system[0].zonename='Europe/Moscow'
+uci set system.@system[0].timezone='MSK-3'
+uci -q delete system.ntp.server
+uci add_list system.ntp.server='ru.pool.ntp.org'
+uci add_list system.ntp.server='pool.ntp.org'
+uci add_list system.ntp.server='time.google.com'
+uci commit system
+
 cat > /etc/init.d/cpusettings << 'EOF'
 #!/bin/sh /etc/rc.common
 START=100
@@ -99,6 +112,7 @@ EOF
 
 cat > /etc/crontabs/root << 'EOF'
 @reboot /etc/init.d/cpusettings start >/dev/null 2>&1
+0 */3 * * * /etc/init.d/vnstat_backup backup >/dev/null 2>&1
 EOF
 /etc/init.d/cron restart
 
