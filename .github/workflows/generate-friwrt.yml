@@ -69,12 +69,13 @@ jobs:
           cp -r $GITHUB_WORKSPACE/origin/* $GITHUB_WORKSPACE/$WORKING_DIR/
           sync
 
-      - name: Download external packages (sing-box-extended + Tachyon)
+      - name: Download external packages (sing-box-extended + Tachyon + internet-detector)
         run: |
           cd $WORKING_DIR
           mkdir -p packages
           bash scripts/sing-box-extended.sh
           bash scripts/tachyon.sh
+          bash scripts/internet-detector.sh
           echo "=== packages/ ==="
           ls -lh packages/
 
