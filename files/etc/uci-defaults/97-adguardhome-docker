@@ -1,0 +1,109 @@
+#!/bin/sh
+
+# Каталоги данных AdGuard Home
+mkdir -p /opt/adguardhome/work /opt/adguardhome/conf
+chmod 700 /opt/adguardhome/work
+
+# Firewall: доступ с LAN к UI и DNS AGH
+uci -q batch << 'EOF'
+delete firewall.agh_ui
+delete firewall.agh_dns
+set firewall.agh_ui=rule
+set firewall.agh_ui.name='Allow-AGH-UI-LAN'
+set firewall.agh_ui.src='lan'
+set firewall.agh_ui.dest_port='3000'
+set firewall.agh_ui.proto='tcp'
+set firewall.agh_ui.target='ACCEPT'
+set firewall.agh_ui.family='ipv4'
+set firewall.agh_dns=rule
+set firewall.agh_dns.name='Allow-AGH-DNS-LAN'
+set firewall.agh_dns.src='lan'
+set firewall.agh_dns.dest_port='5353'
+set firewall.agh_dns.proto='tcp udp'
+set firewall.agh_dns.target='ACCEPT'
+set firewall.agh_dns.family='ipv4'
+EOF
+
+# Include скрипта FORWARD (fw4)
+# удаляем старые include с этим путём
+while uci -q delete firewall.@include[0]; do :; done 2>/dev/null
+# проще: добавить новый
+uci add firewall include
+uci set firewall.@include[-1].path='/etc/firewall.docker-agh'
+uci set firewall.@include[-1].enabled='1'
+uci set firewall.@include[-1].type='script'
+uci set firewall.@include[-1].fw4_compatible='1'
+
+uci commit firewall
+
+chmod +x /etc/firewall.docker-agh
+
+# Скрипт отложенного запуска контейнера (docker + сеть могут подняться позже)
+cat > /etc/init.d/adguardhome-docker << 'INIT'
+#!/bin/sh /etc/rc.common
+START=99
+STOP=10
+
+start() {
+    # ждём dockerd
+    for i in $(seq 1 60); do
+        if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+            break
+        fi
+        sleep 2
+    done
+
+    if ! command -v docker >/dev/null 2>&1; then
+        logger -t adguardhome-docker "docker not found"
+        return 1
+    fi
+
+    # если контейнер уже есть — только стартуем
+    if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx adguardhome; then
+        docker start adguardhome 2>/dev/null
+        /etc/firewall.docker-agh
+        return 0
+    fi
+
+    mkdir -p /opt/adguardhome/work /opt/adguardhome/conf
+    chmod 700 /opt/adguardhome/work
+
+    # нужен интернет для pull
+    for i in $(seq 1 30); do
+        if ping -c 1 -W 2 1.1.1.1 >/dev/null 2>&1; then
+            break
+        fi
+        sleep 3
+    done
+
+    docker pull adguard/adguardhome 2>/dev/null || true
+
+    docker rm -f adguardhome 2>/dev/null
+
+    docker run -d \
+        --name adguardhome \
+        --restart unless-stopped \
+        -v /opt/adguardhome/work:/opt/adguardhome/work \
+        -v /opt/adguardhome/conf:/opt/adguardhome/conf \
+        -p 3000:3000 \
+        -p 5353:53/tcp \
+        -p 5353:53/udp \
+        adguard/adguardhome
+
+    /etc/firewall.docker-agh
+    logger -t adguardhome-docker "AdGuard Home container started"
+}
+
+stop() {
+    docker stop adguardhome 2>/dev/null
+}
+
+boot() {
+    start
+}
+INIT
+
+chmod +x /etc/init.d/adguardhome-docker
+/etc/init.d/adguardhome-docker enable
+
+exit 0
