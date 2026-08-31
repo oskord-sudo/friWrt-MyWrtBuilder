@@ -79,6 +79,15 @@ jobs:
           echo "=== packages/ ==="
           ls -lh packages/
 
+          # Копируем внешние пакеты в образ (установятся при первом запуске)
+          mkdir -p files/root/packages
+          cp packages/sing-box-extended*.apk files/root/packages/ 2>/dev/null || true
+          cp packages/tachyon*.apk files/root/packages/ 2>/dev/null || true
+          cp packages/luci-app-tachyon*.apk files/root/packages/ 2>/dev/null || true
+          cp packages/luci-i18n-tachyon*.apk files/root/packages/ 2>/dev/null || true
+          echo "=== files/root/packages/ ==="
+          ls -lh files/root/packages/
+
       - name: Compile Firmware
         run: |
           cd $WORKING_DIR
