@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Установка внешних пакетов при первом запуске
+# Файлы должны лежать в /root/packages/ (мы их скопируем)
+
+if [ -d /root/packages ]; then
+    for pkg in /root/packages/*.apk; do
+        [ -f "$pkg" ] && apk add --allow-untrusted "$pkg"
+    done
+    rm -rf /root/packages
+fi
+
+exit 0
