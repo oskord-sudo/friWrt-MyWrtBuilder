@@ -1,0 +1,12 @@
+#!/bin/sh
+# Docker FORWARD для AdGuard Home (OpenWrt 25 + fw4)
+
+iptables -I FORWARD -o docker0 -j ACCEPT 2>/dev/null
+iptables -I FORWARD -i docker0 -j ACCEPT 2>/dev/null
+iptables -I FORWARD -m conntrack --ctstate DNAT -j ACCEPT 2>/dev/null
+
+nft insert rule inet fw4 forward ct status dnat accept 2>/dev/null
+nft insert rule inet fw4 forward oifname "docker0" accept 2>/dev/null
+nft insert rule inet fw4 forward iifname "docker0" accept 2>/dev/null
+
+exit 0
