@@ -25,4 +25,7 @@ fi
 FILES="files"
 DISABLED_SERVICES=""
 
+# Увеличиваем размер rootfs (в мегабайтах)
+export ROOTFS_PARTSIZE=512
+
 make image PROFILE="$1" PACKAGES="$PACKAGES $EXCLUDED" FILES="$FILES" DISABLED_SERVICES="$DISABLED_SERVICES"
