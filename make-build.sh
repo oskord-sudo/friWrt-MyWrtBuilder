@@ -17,14 +17,14 @@ PACKAGES+=" docker dockerd docker-compose containerd runc tini luci-app-dockerma
 # SQM + internet-detector
 PACKAGES+=" sqm-scripts luci-app-sqm luci-i18n-sqm-ru kmod-sched-cake kmod-ifb kmod-nft-tproxy kmod-nft-queue kmod-inet-diag kmod-tun kmod-veth internet-detector luci-app-internet-detector luci-i18n-internet-detector-ru"
 
-# Мониторинг (оставил от оригинала)
-PACKAGES+=" vnstat2 vnstati2 luci-app-vnstat2 nlbwmon luci-app-nlbwmon"
+# Мониторинг
+PACKAGES+=" vnstat2 vnstati2 luci-app-vnstat2 luci-i18n-vnstat2-ru nlbwmon luci-app-nlbwmon luci-i18n-nlbwmon-ru"
 
 # LuCI + русский
 PACKAGES+=" luci luci-ssl luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru luci-app-package-manager luci-app-firewall"
 
 # Утилиты
-PACKAGES+=" htop nano bash curl wget-ssl tar unzip gzip jq ttyd openssh-sftp-server screen block-mount losetup resize2fs parted zram-swap coreutils coreutils-base64 btop ip-full bind-dig"
+PACKAGES+=" bash curl wget-ssl tar unzip gzip jq ttyd block-mount losetup resize2fs parted coreutils coreutils-base64 coreutils-install btop ip-full bind-dig socat tcpdump zstd"
 
 EXCLUDED=""
 if [ "${RELEASE_BRANCH%:*}" == "openwrt" ]; then
