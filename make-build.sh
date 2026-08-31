@@ -17,8 +17,6 @@ PACKAGES+=" luci luci-ssl luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-pack
 
 PACKAGES+=" htop nano bash curl wget-ssl tar unzip gzip jq ttyd openssh-sftp-server screen block-mount losetup resize2fs parted zram-swap coreutils coreutils-base64"
 
-PACKAGES+=" sing-box-extended tachyon luci-app-tachyon luci-i18n-tachyon-ru"
-
 EXCLUDED=""
 if [ "${RELEASE_BRANCH%:*}" == "openwrt" ]; then
     EXCLUDED+=" -dnsmasq"
