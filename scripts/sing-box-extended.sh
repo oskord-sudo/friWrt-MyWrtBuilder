@@ -7,6 +7,9 @@ LATEST_JSON=$(curl -sL https://api.github.com/repos/shtorm-7/sing-box-extended/r
 VERSION=$(echo "$LATEST_JSON" | jq -r '.tag_name')
 echo "Latest: $VERSION"
 
+mkdir -p packages
+
+# Ищем подходящий .apk и сохраняем с оригинальным именем
 URL=$(echo "$LATEST_JSON" | jq -r '
   .assets[] | 
   select(.name | test("(?i)(openwrt.*x86_64|x86_64.*openwrt|sing-box-extended.*x86_64).*\\.apk$")) | 
@@ -24,6 +27,7 @@ if [ -z "$URL" ] || [ "$URL" = "null" ]; then
   exit 1
 fi
 
-echo "Downloading: $URL"
-wget -q --show-progress -O packages/sing-box-extended.apk "$URL"
-echo "sing-box-extended → packages/sing-box-extended.apk"
+FILENAME=$(basename "$URL")
+echo "Downloading: $URL → packages/$FILENAME"
+wget -q --show-progress -O "packages/$FILENAME" "$URL"
+echo "sing-box-extended downloaded as $FILENAME"
